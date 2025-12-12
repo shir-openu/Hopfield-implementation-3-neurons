@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>רשת הופפילד - 3 נוירונים - הרצה צעד אחר צעד</title>
+    <style>
+        :root {
+            --bg: #0b1220;
+            --card-bg: #141d2b;
+            --border: #2d3a4f;
+            --ink: #e5e7eb;
+            --teal: #11a8a0;
+            --magenta: #f472b6;
+            --purple: #a78bfa;
+            --green: #22c55e;
+            --orange: #f59e0b;
+            --red: #ef4444;
+            --calc-bg: #0c1526;
+            --blue: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            min-height: 100vh;
+            padding: 20px;
+            font-size: 1rem;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--teal);
+            font-size: 1.8rem;
+            font-weight: 400;
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--ink);
+            opacity: 0.7;
+            font-size: 1rem;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .phase {
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .phase.learning {
+            border-color: var(--purple);
+        }
+
+        .phase.running {
+            border-color: var(--green);
+        }
+
+        .phase.history {
+            border-color: var(--orange);
+        }
+
+        .phase-title {
+            text-align: center;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            font-weight: 400;
+        }
+
+        .phase.learning .phase-title {
+            color: var(--purple);
+        }
+
+        .phase.running .phase-title {
+            color: var(--green);
+        }
+
+        .phase.history .phase-title {
+            color: var(--orange);
+        }
+
+        .phase-description {
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Triangle Diagram SVG */
+        .diagram-container {
+            margin-bottom: 15px;
+        }
+
+        .diagram-svg {
+            width: 100%;
+            height: 220px;
+        }
+
+        .neuron-label {
+            font-family: 'Times New Roman', serif;
+            font-size: 20px;
+            fill: var(--ink);
+            font-weight: bold;
+        }
+
+        .weight-label {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 14px;
+            fill: var(--orange);
+        }
+
+        .edge {
+            stroke: var(--purple);
+            stroke-width: 3;
+            fill: none;
+        }
+
+        .value-display-svg {
+            font-family: monospace;
+            font-size: 16px;
+            fill: var(--orange);
+        }
+
+        /* Pattern selection */
+        .pattern-selection {
+            margin-bottom: 15px;
+        }
+
+        .pattern-selection h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--ink);
+            font-weight: 400;
+            font-size: 1rem;
+        }
+
+        .patterns-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            max-width: 380px;
+            margin: 0 auto;
+            direction: ltr;
+        }
+
+        .pattern-btn {
+            padding: 8px 4px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--calc-bg);
+            color: var(--ink);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: monospace;
+            transition: all 0.2s;
+        }
+
+        .pattern-btn:hover {
+            border-color: var(--purple);
+        }
+
+        .pattern-btn.selected {
+            border-color: var(--green);
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        /* Weight Matrix */
+        .matrix-container {
+            margin-bottom: 15px;
+        }
+
+        .matrix-container h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--ink);
+            font-weight: 400;
+            font-size: 1rem;
+        }
+
+        .matrix-table {
+            margin: 0 auto;
+            border-collapse: collapse;
+            direction: ltr;
+        }
+
+        .matrix-table td {
+            padding: 6px 10px;
+            text-align: center;
+            font-family: 'Times New Roman', serif;
+            font-size: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .matrix-table .header {
+            color: var(--purple);
+            font-style: italic;
+            background: rgba(167, 139, 250, 0.1);
+        }
+
+        .matrix-table .row-header {
+            color: var(--teal);
+            font-style: italic;
+            background: rgba(17, 168, 160, 0.1);
+        }
+
+        .matrix-table .zero {
+            color: #666;
+        }
+
+        /* State selection */
+        .state-selection {
+            margin-bottom: 15px;
+        }
+
+        .state-selection h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--ink);
+            font-weight: 400;
+            font-size: 1rem;
+        }
+
+        .states-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            max-width: 380px;
+            margin: 0 auto;
+            direction: ltr;
+        }
+
+        .state-btn {
+            padding: 8px 4px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--calc-bg);
+            color: var(--ink);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: monospace;
+            transition: all 0.2s;
+        }
+
+        .state-btn:hover {
+            border-color: var(--orange);
+        }
+
+        .state-btn.selected {
+            border-color: var(--orange);
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        .state-btn.stored {
+            color: var(--green);
+        }
+
+        /* Control buttons */
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: var(--calc-bg);
+            color: var(--ink);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            border-color: var(--teal);
+            background: rgba(17, 168, 160, 0.2);
+        }
+
+        .control-btn.primary {
+            border-color: var(--green);
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .control-btn.primary:hover {
+            background: rgba(34, 197, 94, 0.4);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Energy display */
+        .energy-display {
+            text-align: center;
+            padding: 12px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid var(--green);
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .energy-display h3 {
+            margin-bottom: 8px;
+            color: var(--ink);
+            font-weight: 400;
+            font-size: 1rem;
+        }
+
+        .energy-value {
+            font-size: 1.5rem;
+            font-family: 'Times New Roman', serif;
+            color: var(--green);
+        }
+
+        /* Status display */
+        .status-display {
+            text-align: center;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .status-display.running {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--orange);
+            color: var(--orange);
+        }
+
+        .status-display.converged {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid var(--green);
+            color: var(--green);
+        }
+
+        /* History table */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            direction: ltr;
+        }
+
+        .history-table th, .history-table td {
+            padding: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .history-table th {
+            background: rgba(17, 168, 160, 0.2);
+            color: var(--teal);
+            font-weight: 400;
+        }
+
+        .history-table tr.current {
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        .history-table tr.initial {
+            background: rgba(167, 139, 250, 0.15);
+        }
+
+        .history-table .changed {
+            color: var(--orange);
+            font-weight: bold;
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-family: 'Times New Roman', serif;
+        }
+
+        .calc-row:last-child {
+            border-bottom: none;
+        }
+
+        .calc-row .label {
+            color: var(--ink);
+            opacity: 0.8;
+        }
+
+        .calc-row .value {
+            font-family: monospace;
+            color: var(--orange);
+        }
+
+        .calc-row.highlight {
+            background: rgba(34, 197, 94, 0.1);
+            margin: 0 -12px;
+            padding: 6px 12px;
+        }
+
+        .calc-row.highlight .value {
+            color: var(--green);
+            font-weight: bold;
+        }
+
+        /* All states energy table */
+        .all-states-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            direction: ltr;
+        }
+
+        .all-states-table th, .all-states-table td {
+            padding: 6px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .all-states-table th {
+            background: rgba(17, 168, 160, 0.2);
+            color: var(--teal);
+            font-weight: 400;
+        }
+
+        .all-states-table tr.stored {
+            color: var(--green);
+        }
+
+        .all-states-table tr.minimum {
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        .all-states-table tr.current-state {
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        /* Neuron colors */
+        .neuron-a { color: var(--teal); }
+        .neuron-b { color: var(--magenta); }
+        .neuron-c { color: var(--blue); }
+
+        .hl-teal { color: var(--teal); font-weight: 500; }
+        .hl-magenta { color: var(--magenta); font-weight: 500; }
+        .hl-blue { color: var(--blue); font-weight: 500; }
+        .hl-purple { color: var(--purple); font-weight: 500; }
+        .hl-green { color: var(--green); font-weight: 500; }
+        .hl-orange { color: var(--orange); font-weight: 500; }
+
+        /* Popup */
+        .popup-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .popup-overlay.show { display: flex; }
+        .popup {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            direction: rtl;
+        }
+        .popup h2 {
+            margin: 0 0 16px 0;
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--ink);
+            text-align: center;
+        }
+        .popup-close {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+        .popup-close:hover { color: var(--ink); }
+        .formula-box {
+            background: var(--calc-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        .formula-box .formula-title {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+        .formula-box .formula {
+            font-size: 18px;
+            font-family: 'Times New Roman', serif;
+            color: var(--ink);
+            text-align: center;
+            direction: ltr;
+            line-height: 1.8;
+        }
+        .formula sub { font-size: 0.7em; }
+        .formula .sum { font-size: 24px; }
+        .formulas-btn {
+            background: rgba(167,139,250,0.2);
+            border: 2px solid var(--purple);
+            color: var(--ink);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 15px;
+        }
+        .formulas-btn:hover {
+            background: rgba(167,139,250,0.4);
+        }
+
+        @media (max-width: 1400px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+            .phase.history {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .phase.history {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>רשת הופפילד - 3 נוירונים</h1>
+    <div class="subtitle">הרצה צעד אחר צעד עד התכנסות</div>
+
+    <div class="container">
+        <!-- Column 1: Learning Phase -->
+        <div class="phase learning">
+            <div class="phase-title">שלב 1: למידה</div>
+
+            <div class="phase-description">
+                בחרו דפוסים לאחסון ברשת.<br>
+                המשקלים יחושבו אוטומטית לפי כלל Hebb.
+            </div>
+
+            <!-- Triangle Diagram -->
+            <div class="diagram-container">
+                <svg class="diagram-svg" viewBox="0 0 400 220">
+                    <!-- Edges -->
+                    <line id="edge-ab" x1="100" y1="180" x2="300" y2="180" class="edge" />
+                    <line id="edge-ac" x1="100" y1="180" x2="200" y2="50" class="edge" />
+                    <line id="edge-bc" x1="300" y1="180" x2="200" y2="50" class="edge" />
+
+                    <!-- Weight labels -->
+                    <text id="weight-ab" x="200" y="210" text-anchor="middle" class="weight-label">J<tspan dy="3" font-size="10">AB</tspan><tspan dy="-3"> = 0</tspan></text>
+                    <text id="weight-ac" x="130" y="105" text-anchor="middle" class="weight-label">J<tspan dy="3" font-size="10">AC</tspan><tspan dy="-3"> = 0</tspan></text>
+                    <text id="weight-bc" x="270" y="105" text-anchor="middle" class="weight-label">J<tspan dy="3" font-size="10">BC</tspan><tspan dy="-3"> = 0</tspan></text>
+
+                    <!-- Neuron A -->
+                    <g id="neuron-a-group">
+                        <circle id="neuron-a" cx="100" cy="180" r="30" fill="var(--teal)" />
+                        <text x="100" y="185" text-anchor="middle" class="neuron-label">A</text>
+                    </g>
+
+                    <!-- Neuron B -->
+                    <g id="neuron-b-group">
+                        <circle id="neuron-b" cx="300" cy="180" r="30" fill="var(--magenta)" />
+                        <text x="300" y="185" text-anchor="middle" class="neuron-label">B</text>
+                    </g>
+
+                    <!-- Neuron C -->
+                    <g id="neuron-c-group">
+                        <circle id="neuron-c" cx="200" cy="50" r="30" fill="var(--blue)" />
+                        <text x="200" y="55" text-anchor="middle" class="neuron-label">C</text>
+                    </g>
+
+                    <!-- State values -->
+                    <text id="value-a" x="55" y="185" text-anchor="middle" class="value-display-svg">−</text>
+                    <text id="value-b" x="345" y="185" text-anchor="middle" class="value-display-svg">−</text>
+                    <text id="value-c" x="200" y="15" text-anchor="middle" class="value-display-svg">−</text>
+                </svg>
+            </div>
+
+            <div class="pattern-selection">
+                <h3>בחרו דפוסים לאחסון (A, B, C):</h3>
+                <div class="patterns-grid">
+                    <button class="pattern-btn" data-pattern="1,1,1">(+,+,+)</button>
+                    <button class="pattern-btn" data-pattern="1,1,-1">(+,+,−)</button>
+                    <button class="pattern-btn" data-pattern="1,-1,1">(+,−,+)</button>
+                    <button class="pattern-btn" data-pattern="1,-1,-1">(+,−,−)</button>
+                    <button class="pattern-btn" data-pattern="-1,1,1">(−,+,+)</button>
+                    <button class="pattern-btn" data-pattern="-1,1,-1">(−,+,−)</button>
+                    <button class="pattern-btn" data-pattern="-1,-1,1">(−,−,+)</button>
+                    <button class="pattern-btn" data-pattern="-1,-1,-1">(−,−,−)</button>
+                </div>
+            </div>
+
+            <div class="matrix-container">
+                <h3>מטריצת המשקלים:</h3>
+                <table class="matrix-table">
+                    <tr>
+                        <td class="header">J</td>
+                        <td class="header">A</td>
+                        <td class="header">B</td>
+                        <td class="header">C</td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">A</td>
+                        <td class="zero">0</td>
+                        <td id="j-ab">0</td>
+                        <td id="j-ac">0</td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">B</td>
+                        <td id="j-ba">0</td>
+                        <td class="zero">0</td>
+                        <td id="j-bc">0</td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">C</td>
+                        <td id="j-ca">0</td>
+                        <td id="j-cb">0</td>
+                        <td class="zero">0</td>
+                    </tr>
+                </table>
+            </div>
+
+            <table class="all-states-table">
+                <thead>
+                    <tr>
+                        <th>מצב (A,B,C)</th>
+                        <th>אנרגיה E</th>
+                        <th>שמור?</th>
+                    </tr>
+                </thead>
+                <tbody id="all-states-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Column 2: Running Phase -->
+        <div class="phase running">
+            <div class="phase-title">שלב 2: הרצה</div>
+
+            <div class="phase-description">
+                בחרו מצב התחלתי והריצו את הרשת צעד אחר צעד.
+            </div>
+
+            <div class="state-selection">
+                <h3>בחרו מצב התחלתי (A, B, C):</h3>
+                <div class="states-grid" id="states-grid">
+                    <button class="state-btn" data-state="1,1,1">(+,+,+)</button>
+                    <button class="state-btn" data-state="1,1,-1">(+,+,−)</button>
+                    <button class="state-btn" data-state="1,-1,1">(+,−,+)</button>
+                    <button class="state-btn" data-state="1,-1,-1">(+,−,−)</button>
+                    <button class="state-btn" data-state="-1,1,1">(−,+,+)</button>
+                    <button class="state-btn" data-state="-1,1,-1">(−,+,−)</button>
+                    <button class="state-btn" data-state="-1,-1,1">(−,−,+)</button>
+                    <button class="state-btn" data-state="-1,-1,-1">(−,−,−)</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="control-btn primary" id="step-btn">צעד אחד</button>
+                <button class="control-btn" id="run-btn">הרץ עד התכנסות</button>
+                <button class="control-btn" id="reset-btn">אפס</button>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="formulas-btn" id="formulas-btn">נוסחאות</button>
+            </div>
+
+            <div class="status-display running" id="status-display">
+                בחרו מצב התחלתי
+            </div>
+
+            <div class="energy-display">
+                <h3>אנרגיה נוכחית:</h3>
+                <div class="energy-value" id="current-energy">E = 0</div>
+            </div>
+
+        </div>
+
+        <!-- Column 3: History -->
+        <div class="phase history">
+            <div class="phase-title">היסטוריית ההרצה</div>
+
+            <div class="phase-description">
+                כל הצעדים מההתחלה ועד ההתכנסות
+            </div>
+
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>צעד</th>
+                        <th>A</th>
+                        <th>B</th>
+                        <th>C</th>
+                        <th>אנרגיה E</th>
+                        <th>נוירון שהתעדכן</th>
+                    </tr>
+                </thead>
+                <tbody id="history-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Formulas Popup -->
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="popup">
+            <button class="popup-close" id="popupClose">×</button>
+            <h2>נוסחאות רשת הופפילד</h2>
+
+            <div class="formula-box">
+                <div class="formula-title">1. נוסחת המשקלים (Hebbian Learning):</div>
+                <div class="formula">
+                    <span class="hl-purple">J<sub>ij</sub></span> =
+                    <span style="font-size:14px">1</span>/<span style="font-size:14px">N</span>
+                    <span class="sum">Σ</span><sup style="font-size:12px">P</sup><sub style="font-size:12px">μ=1</sub>
+                    p<sub>i</sub><sup>μ</sup> · p<sub>j</sub><sup>μ</sup>
+                    &nbsp;&nbsp; (i ≠ j)
+                </div>
+                <div class="formula" style="font-size:14px;margin-top:8px;color:#94a3b8">
+                    J<sub>ii</sub> = 0 &nbsp; (אין חיבור עצמי)
+                </div>
+            </div>
+
+            <div class="formula-box">
+                <div class="formula-title">2. השדה המקומי:</div>
+                <div class="formula">
+                    <span class="hl-teal">h<sub>i</sub></span> =
+                    <span class="sum">Σ</span><sub style="font-size:12px">j≠i</sub>
+                    J<sub>ij</sub> · s<sub>j</sub>
+                </div>
+            </div>
+
+            <div class="formula-box">
+                <div class="formula-title">3. כלל ההכרעה (עדכון אסינכרוני):</div>
+                <div class="formula">
+                    <span class="hl-orange">s<sub>i</sub>(t+1)</span> = sign(h<sub>i</sub>) =
+                    <span style="font-size:16px">
+                    { <span class="hl-green">+1</span> &nbsp; if h<sub>i</sub> ≥ 0<br>
+                    &nbsp;&nbsp;{ <span class="hl-orange">−1</span> &nbsp; if h<sub>i</sub> &lt; 0
+                    </span>
+                </div>
+            </div>
+
+            <div class="formula-box">
+                <div class="formula-title">4. פונקציית האנרגיה:</div>
+                <div class="formula">
+                    <span class="hl-green">E</span> = −<span style="font-size:14px">1</span>/<span style="font-size:14px">2</span>
+                    <span class="sum">Σ</span><sub style="font-size:12px">i</sub>
+                    <span class="sum">Σ</span><sub style="font-size:12px">j≠i</sub>
+                    J<sub>ij</sub> · s<sub>i</sub> · s<sub>j</sub>
+                </div>
+                <div class="formula" style="font-size:14px;margin-top:8px;color:#94a3b8">
+                    (עבור 3 נוירונים: E = −(J<sub>AB</sub>·A·B + J<sub>AC</sub>·A·C + J<sub>BC</sub>·B·C))
+                </div>
+            </div>
+
+            <div class="formula-box">
+                <div class="formula-title">5. תכונות:</div>
+                <div class="formula" style="font-size:14px;text-align:right;direction:rtl">
+                    • האנרגיה תמיד יורדת או נשארת קבועה<br>
+                    • הרשת מתכנסת לנקודת שבת (מינימום מקומי)<br>
+                    • הדפוסים המאוחסנים הם אטרקטורים
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let storedPatterns = [];
+        let weights = { ab: 0, ac: 0, bc: 0 };
+        let currentState = { a: 1, b: 1, c: 1 };
+        let history = [];
+        let stepCount = 0;
+        let isConverged = false;
+        let lastUpdatedNeuron = null;
+        const N = 3;
+
+        // DOM elements
+        const patternBtns = document.querySelectorAll('.pattern-btn');
+        const stateBtns = document.querySelectorAll('.state-btn');
+        const stepBtn = document.getElementById('step-btn');
+        const runBtn = document.getElementById('run-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const statusDisplay = document.getElementById('status-display');
+        const currentEnergyDisplay = document.getElementById('current-energy');
+        const historyTbody = document.getElementById('history-tbody');
+        const allStatesTbody = document.getElementById('all-states-tbody');
+
+        // SVG elements
+        const edgeAB = document.getElementById('edge-ab');
+        const edgeAC = document.getElementById('edge-ac');
+        const edgeBC = document.getElementById('edge-bc');
+        const weightAB = document.getElementById('weight-ab');
+        const weightAC = document.getElementById('weight-ac');
+        const weightBC = document.getElementById('weight-bc');
+        const valueA = document.getElementById('value-a');
+        const valueB = document.getElementById('value-b');
+        const valueC = document.getElementById('value-c');
+        const neuronA = document.getElementById('neuron-a');
+        const neuronB = document.getElementById('neuron-b');
+        const neuronC = document.getElementById('neuron-c');
+
+        // Matrix cells
+        const jAB = document.getElementById('j-ab');
+        const jAC = document.getElementById('j-ac');
+        const jBA = document.getElementById('j-ba');
+        const jBC = document.getElementById('j-bc');
+        const jCA = document.getElementById('j-ca');
+        const jCB = document.getElementById('j-cb');
+
+        // Calculate weights from stored patterns
+        function calculateWeights() {
+            if (storedPatterns.length === 0) {
+                weights = { ab: 0, ac: 0, bc: 0 };
+                return;
+            }
+
+            let sumAB = 0, sumAC = 0, sumBC = 0;
+            for (const p of storedPatterns) {
+                sumAB += p.a * p.b;
+                sumAC += p.a * p.c;
+                sumBC += p.b * p.c;
+            }
+            weights.ab = sumAB / N;
+            weights.ac = sumAC / N;
+            weights.bc = sumBC / N;
+        }
+
+        // Calculate energy for a state
+        function calcEnergy(state) {
+            return -(weights.ab * state.a * state.b +
+                     weights.ac * state.a * state.c +
+                     weights.bc * state.b * state.c);
+        }
+
+        // Calculate local field for a neuron
+        function calcLocalField(neuron, state) {
+            if (neuron === 'a') {
+                return weights.ab * state.b + weights.ac * state.c;
+            } else if (neuron === 'b') {
+                return weights.ab * state.a + weights.bc * state.c;
+            } else {
+                return weights.ac * state.a + weights.bc * state.b;
+            }
+        }
+
+        // Format number with sign
+        function formatNum(n) {
+            if (typeof n !== 'number' || isNaN(n)) return '0';
+            const formatted = n.toFixed(2);
+            return (n >= 0 ? '+' : '') + formatted;
+        }
+
+        function formatSign(n) {
+            return n >= 0 ? '+' : '−';
+        }
+
+        function formatState(n) {
+            return n >= 0 ? '+1' : '−1';
+        }
+
+        // Update SVG diagram
+        function updateDiagram() {
+            // Update weight labels
+            weightAB.innerHTML = `J<tspan dy="3" font-size="10">AB</tspan><tspan dy="-3"> = ${formatNum(weights.ab)}</tspan>`;
+            weightAC.innerHTML = `J<tspan dy="3" font-size="10">AC</tspan><tspan dy="-3"> = ${formatNum(weights.ac)}</tspan>`;
+            weightBC.innerHTML = `J<tspan dy="3" font-size="10">BC</tspan><tspan dy="-3"> = ${formatNum(weights.bc)}</tspan>`;
+
+            // Update edge colors
+            edgeAB.setAttribute('stroke', weights.ab > 0 ? '#a78bfa' : weights.ab < 0 ? '#ef4444' : '#4b5563');
+            edgeAC.setAttribute('stroke', weights.ac > 0 ? '#a78bfa' : weights.ac < 0 ? '#ef4444' : '#4b5563');
+            edgeBC.setAttribute('stroke', weights.bc > 0 ? '#a78bfa' : weights.bc < 0 ? '#ef4444' : '#4b5563');
+
+            // Determine what to display:
+            // If patterns are stored and no initial state selected yet (stepCount == 0 and history is empty),
+            // show the last stored pattern. Otherwise show currentState.
+            let displayState;
+            if (storedPatterns.length > 0 && history.length === 0) {
+                // Show last stored pattern
+                displayState = storedPatterns[storedPatterns.length - 1];
+            } else {
+                displayState = currentState;
+            }
+
+            // Update neuron values
+            valueA.textContent = formatState(displayState.a);
+            valueB.textContent = formatState(displayState.b);
+            valueC.textContent = formatState(displayState.c);
+
+            // Update neuron colors based on displayed state
+            neuronA.setAttribute('fill', displayState.a > 0 ? 'var(--teal)' : '#1e4047');
+            neuronB.setAttribute('fill', displayState.b > 0 ? 'var(--magenta)' : '#4a2040');
+            neuronC.setAttribute('fill', displayState.c > 0 ? 'var(--blue)' : '#1e3a5f');
+        }
+
+        // Update weight matrix display
+        function updateMatrixDisplay() {
+            jAB.textContent = formatNum(weights.ab);
+            jAC.textContent = formatNum(weights.ac);
+            jBA.textContent = formatNum(weights.ab);
+            jBC.textContent = formatNum(weights.bc);
+            jCA.textContent = formatNum(weights.ac);
+            jCB.textContent = formatNum(weights.bc);
+
+            // Color the cells
+            [jAB, jBA].forEach(cell => cell.style.color = weights.ab >= 0 ? 'var(--green)' : 'var(--red)');
+            [jAC, jCA].forEach(cell => cell.style.color = weights.ac >= 0 ? 'var(--green)' : 'var(--red)');
+            [jBC, jCB].forEach(cell => cell.style.color = weights.bc >= 0 ? 'var(--green)' : 'var(--red)');
+        }
+
+        // Update all states energy table
+        function updateAllStatesTable() {
+            const states = [
+                { a: 1, b: 1, c: 1, label: '(+,+,+)' },
+                { a: 1, b: 1, c: -1, label: '(+,+,−)' },
+                { a: 1, b: -1, c: 1, label: '(+,−,+)' },
+                { a: 1, b: -1, c: -1, label: '(+,−,−)' },
+                { a: -1, b: 1, c: 1, label: '(−,+,+)' },
+                { a: -1, b: 1, c: -1, label: '(−,+,−)' },
+                { a: -1, b: -1, c: 1, label: '(−,−,+)' },
+                { a: -1, b: -1, c: -1, label: '(−,−,−)' }
+            ];
+
+            const energies = states.map(s => ({ ...s, E: calcEnergy(s) }));
+            const minE = Math.min(...energies.map(e => e.E));
+
+            allStatesTbody.innerHTML = energies.map(s => {
+                const isStored = storedPatterns.some(p => p.a === s.a && p.b === s.b && p.c === s.c);
+                const isMin = s.E === minE && (weights.ab !== 0 || weights.ac !== 0 || weights.bc !== 0);
+                const isCurrent = s.a === currentState.a && s.b === currentState.b && s.c === currentState.c;
+
+                let classes = [];
+                if (isStored) classes.push('stored');
+                if (isMin) classes.push('minimum');
+                if (isCurrent) classes.push('current-state');
+
+                return `<tr class="${classes.join(' ')}">
+                    <td>${s.label}</td>
+                    <td>${formatNum(s.E)}</td>
+                    <td>${isStored ? '✓' : ''}</td>
+                </tr>`;
+            }).join('');
+
+            // Update state buttons to show which are stored
+            stateBtns.forEach(btn => {
+                const [a, b, c] = btn.dataset.state.split(',').map(Number);
+                const isStored = storedPatterns.some(p => p.a === a && p.b === b && p.c === c);
+                btn.classList.toggle('stored', isStored);
+            });
+        }
+
+        // Update current energy display
+        function updateEnergyDisplay() {
+            const E = calcEnergy(currentState);
+            currentEnergyDisplay.textContent = `E = ${formatNum(E)}`;
+        }
+
+        // Add entry to history
+        function addToHistory(updatedNeuron = null) {
+            const E = calcEnergy(currentState);
+            history.push({
+                step: stepCount,
+                state: { ...currentState },
+                energy: E,
+                updatedNeuron: updatedNeuron
+            });
+            updateHistoryTable();
+        }
+
+        // Update history table
+        function updateHistoryTable() {
+            // המצב ההתחלתי להשוואה
+            const initialState = history.length > 0 ? history[0].state : null;
+
+            historyTbody.innerHTML = history.map((h, idx) => {
+                const isLast = idx === history.length - 1;
+                const isFirst = idx === 0;
+
+                // השוואה למצב ההתחלתי - אם השתנה במהלך כל ההרצה
+                const aChanged = idx > 0 && initialState && h.state.a !== initialState.a;
+                const bChanged = idx > 0 && initialState && h.state.b !== initialState.b;
+                const cChanged = idx > 0 && initialState && h.state.c !== initialState.c;
+
+                return `<tr class="${isLast ? 'current' : ''} ${isFirst ? 'initial' : ''}">
+                    <td>${h.step}</td>
+                    <td class="${aChanged ? 'changed' : ''}">${formatState(h.state.a)}</td>
+                    <td class="${bChanged ? 'changed' : ''}">${formatState(h.state.b)}</td>
+                    <td class="${cChanged ? 'changed' : ''}">${formatState(h.state.c)}</td>
+                    <td>${formatNum(h.energy)}</td>
+                    <td>${h.updatedNeuron ? h.updatedNeuron.toUpperCase() : '−'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // Update status display
+        function updateStatus() {
+            if (isConverged) {
+                statusDisplay.className = 'status-display converged';
+                statusDisplay.textContent = '✓ התכנסות! המערכת הגיעה למצב יציב';
+            } else if (history.length > 0) {
+                statusDisplay.className = 'status-display running';
+                statusDisplay.textContent = `צעד ${stepCount} - ממשיכים...`;
+            } else {
+                statusDisplay.className = 'status-display running';
+                statusDisplay.textContent = 'בחרו מצב התחלתי';
+            }
+        }
+
+        // Perform one update step (asynchronous update - one neuron at a time)
+        function doStep() {
+            if (isConverged) return false;
+
+            // Try updating each neuron in order
+            const neurons = ['a', 'b', 'c'];
+            let changed = false;
+            let updatedNeuron = null;
+
+            // Always check in alphabetical order (A, B, C)
+            for (let i = 0; i < 3; i++) {
+                const n = neurons[i];
+                const h = calcLocalField(n, currentState);
+                const newVal = h >= 0 ? 1 : -1;
+
+                if (newVal !== currentState[n]) {
+                    currentState[n] = newVal;
+                    changed = true;
+                    updatedNeuron = n;
+                    break;
+                }
+            }
+
+            if (!changed) {
+                isConverged = true;
+            }
+
+            stepCount++;
+            addToHistory(updatedNeuron);
+            updateAll();
+
+            return changed;
+        }
+
+        // Run until convergence
+        function runUntilConvergence() {
+            let maxSteps = 100;
+            let steps = 0;
+
+            const interval = setInterval(() => {
+                if (isConverged || steps >= maxSteps) {
+                    clearInterval(interval);
+                    return;
+                }
+                doStep();
+                steps++;
+            }, 500);
+        }
+
+        // Reset the running phase
+        function resetRun() {
+            currentState = { a: 1, b: 1, c: 1 };
+            history = [];
+            stepCount = 0;
+            isConverged = false;
+            lastUpdatedNeuron = null;
+
+            stateBtns.forEach(btn => btn.classList.remove('selected'));
+            updateAll();
+        }
+
+        // Update all displays
+        function updateAll() {
+            updateDiagram();
+            updateMatrixDisplay();
+            updateAllStatesTable();
+            updateEnergyDisplay();
+            updateStatus();
+        }
+
+        // Pattern button click
+        patternBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const [a, b, c] = btn.dataset.pattern.split(',').map(Number);
+                const pattern = { a, b, c };
+
+                const existingIndex = storedPatterns.findIndex(p => p.a === a && p.b === b && p.c === c);
+                if (existingIndex >= 0) {
+                    storedPatterns.splice(existingIndex, 1);
+                    btn.classList.remove('selected');
+                } else {
+                    storedPatterns.push(pattern);
+                    btn.classList.add('selected');
+                }
+
+                calculateWeights();
+                resetRun();
+            });
+        });
+
+        // State button click
+        stateBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const [a, b, c] = btn.dataset.state.split(',').map(Number);
+                currentState = { a, b, c };
+                history = [];
+                stepCount = 0;
+                isConverged = false;
+
+                stateBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+
+                addToHistory(null);
+                updateAll();
+            });
+        });
+
+        // Control buttons
+        stepBtn.addEventListener('click', doStep);
+        runBtn.addEventListener('click', runUntilConvergence);
+        resetBtn.addEventListener('click', resetRun);
+
+        // Formulas popup
+        const popupOverlay = document.getElementById('popupOverlay');
+        const formulasBtn = document.getElementById('formulas-btn');
+        const popupClose = document.getElementById('popupClose');
+
+        formulasBtn.addEventListener('click', () => {
+            popupOverlay.classList.add('show');
+        });
+
+        popupClose.addEventListener('click', () => {
+            popupOverlay.classList.remove('show');
+        });
+
+        popupOverlay.addEventListener('click', (e) => {
+            if (e.target === popupOverlay) {
+                popupOverlay.classList.remove('show');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                popupOverlay.classList.remove('show');
+            }
+        });
+
+        // Initial render
+        updateAll();
+    </script>
+</body>
+</html>
