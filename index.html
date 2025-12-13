@@ -698,6 +698,30 @@
                 </div>
             </div>
 
+            <!-- Local Fields Calculation Display -->
+            <div class="local-fields-display" id="local-fields-display" style="display: none;">
+                <h3 style="text-align: center; margin-bottom: 12px; color: var(--ink); font-weight: 400; font-size: 1rem;">חישוב השדות המקומיים עבור תנאי ההתחלה</h3>
+                <div class="local-fields-box" style="background: var(--calc-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; direction: ltr; font-family: 'Times New Roman', serif;">
+                    <div id="local-field-a" class="local-field-row" style="margin-bottom: 10px; padding: 8px; background: rgba(17, 168, 160, 0.1); border-radius: 6px;"></div>
+                    <div id="local-field-b" class="local-field-row" style="margin-bottom: 10px; padding: 8px; background: rgba(244, 114, 182, 0.1); border-radius: 6px;"></div>
+                    <div id="local-field-c" class="local-field-row" style="margin-bottom: 10px; padding: 8px; background: rgba(59, 130, 246, 0.1); border-radius: 6px;"></div>
+                </div>
+
+                <!-- New State Values from Local Fields -->
+                <h3 style="text-align: center; margin: 15px 0 12px 0; color: var(--ink); font-weight: 400; font-size: 1rem;">ערכי S לפי השדות המקומיים</h3>
+                <div class="new-states-box" style="background: var(--calc-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; direction: ltr; font-family: 'Times New Roman', serif;">
+                    <div id="new-state-a" class="local-field-row" style="margin-bottom: 10px; padding: 8px; background: rgba(17, 168, 160, 0.1); border-radius: 6px;"></div>
+                    <div id="new-state-b" class="local-field-row" style="margin-bottom: 10px; padding: 8px; background: rgba(244, 114, 182, 0.1); border-radius: 6px;"></div>
+                    <div id="new-state-c" class="local-field-row" style="padding: 8px; background: rgba(59, 130, 246, 0.1); border-radius: 6px;"></div>
+                </div>
+
+                <!-- Energy Calculation -->
+                <h3 style="text-align: center; margin: 15px 0 12px 0; color: var(--ink); font-weight: 400; font-size: 1rem;">חישוב האנרגיה</h3>
+                <div class="energy-calc-box" style="background: var(--calc-bg); border: 1px solid var(--green); border-radius: 10px; padding: 12px; direction: ltr; font-family: 'Times New Roman', serif;">
+                    <div id="energy-calc" class="local-field-row" style="padding: 8px; background: rgba(34, 197, 94, 0.1); border-radius: 6px;"></div>
+                </div>
+            </div>
+
             <div class="controls">
                 <button class="control-btn primary" id="step-btn">צעד אחד</button>
                 <button class="control-btn" id="run-btn">הרץ עד התכנסות</button>
@@ -999,6 +1023,73 @@
             currentEnergyDisplay.textContent = `E = ${formatNum(E)}`;
         }
 
+        // Update local fields display for initial state
+        function updateLocalFieldsDisplay(initialState) {
+            const localFieldsDiv = document.getElementById('local-fields-display');
+            const fieldA = document.getElementById('local-field-a');
+            const fieldB = document.getElementById('local-field-b');
+            const fieldC = document.getElementById('local-field-c');
+            const newStateA = document.getElementById('new-state-a');
+            const newStateB = document.getElementById('new-state-b');
+            const newStateC = document.getElementById('new-state-c');
+            const energyCalc = document.getElementById('energy-calc');
+
+            // Show the section
+            localFieldsDiv.style.display = 'block';
+
+            // Calculate local fields
+            const hA = calcLocalField('a', initialState);
+            const hB = calcLocalField('b', initialState);
+            const hC = calcLocalField('c', initialState);
+
+            // Calculate new state values based on local fields (sign function)
+            const newSA = hA >= 0 ? 1 : -1;
+            const newSB = hB >= 0 ? 1 : -1;
+            const newSC = hC >= 0 ? 1 : -1;
+
+            // Format state values for display
+            const sA = initialState.a > 0 ? '(+1)' : '(−1)';
+            const sB = initialState.b > 0 ? '(+1)' : '(−1)';
+            const sC = initialState.c > 0 ? '(+1)' : '(−1)';
+
+            // Format weight values
+            const jAB = formatNum(weights.ab);
+            const jAC = formatNum(weights.ac);
+            const jBC = formatNum(weights.bc);
+
+            // Create detailed calculation strings for local fields
+            fieldA.innerHTML = `<span style="color: var(--teal); font-weight: bold;">h<sub>A</sub></span> = J<sub>AB</sub> × s<sub>B</sub> + J<sub>AC</sub> × s<sub>C</sub> = ${jAB} × ${sB} + ${jAC} × ${sC} = <span style="color: var(--teal); font-weight: bold;">${formatNum(hA)}</span>`;
+
+            fieldB.innerHTML = `<span style="color: var(--magenta); font-weight: bold;">h<sub>B</sub></span> = J<sub>AB</sub> × s<sub>A</sub> + J<sub>BC</sub> × s<sub>C</sub> = ${jAB} × ${sA} + ${jBC} × ${sC} = <span style="color: var(--magenta); font-weight: bold;">${formatNum(hB)}</span>`;
+
+            fieldC.innerHTML = `<span style="color: var(--blue); font-weight: bold;">h<sub>C</sub></span> = J<sub>AC</sub> × s<sub>A</sub> + J<sub>BC</sub> × s<sub>B</sub> = ${jAC} × ${sA} + ${jBC} × ${sB} = <span style="color: var(--blue); font-weight: bold;">${formatNum(hC)}</span>`;
+
+            // Create detailed calculation strings for new state values
+            const hACompare = hA >= 0 ? '≥ 0' : '< 0';
+            const hBCompare = hB >= 0 ? '≥ 0' : '< 0';
+            const hCCompare = hC >= 0 ? '≥ 0' : '< 0';
+
+            newStateA.innerHTML = `<span style="color: var(--teal); font-weight: bold;">s<sub>A</sub></span> = sign(h<sub>A</sub>) = sign(${formatNum(hA)}) ${hACompare} → <span style="color: var(--teal); font-weight: bold;">${newSA > 0 ? '+1' : '−1'}</span>`;
+
+            newStateB.innerHTML = `<span style="color: var(--magenta); font-weight: bold;">s<sub>B</sub></span> = sign(h<sub>B</sub>) = sign(${formatNum(hB)}) ${hBCompare} → <span style="color: var(--magenta); font-weight: bold;">${newSB > 0 ? '+1' : '−1'}</span>`;
+
+            newStateC.innerHTML = `<span style="color: var(--blue); font-weight: bold;">s<sub>C</sub></span> = sign(h<sub>C</sub>) = sign(${formatNum(hC)}) ${hCCompare} → <span style="color: var(--blue); font-weight: bold;">${newSC > 0 ? '+1' : '−1'}</span>`;
+
+            // Calculate and display energy
+            const E = calcEnergy(initialState);
+            const term1 = weights.ab * initialState.a * initialState.b;
+            const term2 = weights.ac * initialState.a * initialState.c;
+            const term3 = weights.bc * initialState.b * initialState.c;
+
+            energyCalc.innerHTML = `<span style="color: var(--green); font-weight: bold;">E</span> = −(J<sub>AB</sub>·s<sub>A</sub>·s<sub>B</sub> + J<sub>AC</sub>·s<sub>A</sub>·s<sub>C</sub> + J<sub>BC</sub>·s<sub>B</sub>·s<sub>C</sub>) = −(${formatNum(term1)} + ${formatNum(term2)} + ${formatNum(term3)}) = <span style="color: var(--green); font-weight: bold;">${formatNum(E)}</span>`;
+        }
+
+        // Hide local fields display
+        function hideLocalFieldsDisplay() {
+            const localFieldsDiv = document.getElementById('local-fields-display');
+            localFieldsDiv.style.display = 'none';
+        }
+
         // Add entry to history
         function addToHistory(updatedNeuron = null) {
             const E = calcEnergy(currentState);
@@ -1108,6 +1199,7 @@
             lastUpdatedNeuron = null;
 
             stateBtns.forEach(btn => btn.classList.remove('selected'));
+            hideLocalFieldsDisplay();
             updateAll();
         }
 
@@ -1151,6 +1243,9 @@
 
                 stateBtns.forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
+
+                // Show local fields calculation for initial state
+                updateLocalFieldsDisplay({ a, b, c });
 
                 addToHistory(null);
                 updateAll();
