@@ -751,6 +751,28 @@
                 כל הצעדים מההתחלה ועד ההתכנסות
             </div>
 
+            <!-- Current State Diagram -->
+            <div style="text-align: center; margin-bottom: 15px;">
+                <div style="font-size: 0.95rem; color: var(--ink); margin-bottom: 8px;">מצב נוכחי</div>
+                <svg id="current-state-diagram" width="200" height="180" style="display: block; margin: 0 auto;">
+                    <!-- Edges -->
+                    <line x1="40" y1="130" x2="100" y2="30" stroke="var(--border)" stroke-width="2"/>
+                    <line x1="160" y1="130" x2="100" y2="30" stroke="var(--border)" stroke-width="2"/>
+                    <line x1="40" y1="130" x2="160" y2="130" stroke="var(--border)" stroke-width="2"/>
+                    <!-- Neurons -->
+                    <circle id="current-neuron-c" cx="100" cy="30" r="22" fill="var(--teal)" stroke="var(--ink)" stroke-width="2"/>
+                    <circle id="current-neuron-a" cx="40" cy="130" r="22" fill="var(--teal)" stroke="var(--ink)" stroke-width="2"/>
+                    <circle id="current-neuron-b" cx="160" cy="130" r="22" fill="var(--teal)" stroke="var(--ink)" stroke-width="2"/>
+                    <!-- Labels -->
+                    <text x="100" y="26" fill="white" font-size="14" text-anchor="middle">C</text>
+                    <text id="current-label-c" x="100" y="40" fill="white" font-size="11" text-anchor="middle">+1</text>
+                    <text x="40" y="126" fill="white" font-size="14" text-anchor="middle">A</text>
+                    <text id="current-label-a" x="40" y="140" fill="white" font-size="11" text-anchor="middle">+1</text>
+                    <text x="160" y="126" fill="white" font-size="14" text-anchor="middle">B</text>
+                    <text id="current-label-b" x="160" y="140" fill="white" font-size="11" text-anchor="middle">+1</text>
+                </svg>
+            </div>
+
             <table class="history-table">
                 <thead>
                     <tr>
@@ -939,15 +961,12 @@
             edgeAC.setAttribute('stroke', weights.ac > 0 ? '#a78bfa' : weights.ac < 0 ? '#ef4444' : '#4b5563');
             edgeBC.setAttribute('stroke', weights.bc > 0 ? '#a78bfa' : weights.bc < 0 ? '#ef4444' : '#4b5563');
 
-            // Determine what to display:
-            // If patterns are stored and no initial state selected yet (stepCount == 0 and history is empty),
-            // show the last stored pattern. Otherwise show currentState.
+            // Always show the last stored pattern (diagram stays fixed on patterns)
             let displayState;
-            if (storedPatterns.length > 0 && history.length === 0) {
-                // Show last stored pattern
+            if (storedPatterns.length > 0) {
                 displayState = storedPatterns[storedPatterns.length - 1];
             } else {
-                displayState = currentState;
+                displayState = { a: 1, b: 1, c: 1 }; // Default
             }
 
             // Update neuron values
@@ -959,6 +978,26 @@
             neuronA.setAttribute('fill', displayState.a > 0 ? 'var(--teal)' : '#1e4047');
             neuronB.setAttribute('fill', displayState.b > 0 ? 'var(--magenta)' : '#4a2040');
             neuronC.setAttribute('fill', displayState.c > 0 ? 'var(--blue)' : '#1e3a5f');
+        }
+
+        // Update current state diagram (in column 3)
+        function updateCurrentStateDiagram() {
+            const neuronA = document.getElementById('current-neuron-a');
+            const neuronB = document.getElementById('current-neuron-b');
+            const neuronC = document.getElementById('current-neuron-c');
+            const labelA = document.getElementById('current-label-a');
+            const labelB = document.getElementById('current-label-b');
+            const labelC = document.getElementById('current-label-c');
+
+            // Update colors
+            neuronA.setAttribute('fill', currentState.a > 0 ? 'var(--teal)' : '#1e4047');
+            neuronB.setAttribute('fill', currentState.b > 0 ? 'var(--magenta)' : '#4a2040');
+            neuronC.setAttribute('fill', currentState.c > 0 ? 'var(--blue)' : '#1e3a5f');
+
+            // Update labels
+            labelA.textContent = currentState.a > 0 ? '+1' : '−1';
+            labelB.textContent = currentState.b > 0 ? '+1' : '−1';
+            labelC.textContent = currentState.c > 0 ? '+1' : '−1';
         }
 
         // Update weight matrix display
@@ -1171,6 +1210,8 @@
             stepCount++;
             addToHistory(updatedNeuron);
             updateAll();
+            updateLocalFieldsDisplay(currentState);
+            updateCurrentStateDiagram();
 
             return changed;
         }
@@ -1246,6 +1287,7 @@
 
                 // Show local fields calculation for initial state
                 updateLocalFieldsDisplay({ a, b, c });
+                updateCurrentStateDiagram();
 
                 addToHistory(null);
                 updateAll();
